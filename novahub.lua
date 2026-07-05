@@ -37,7 +37,6 @@ local Seeds = {
     { Name = "Beanstalk", Data = "{\000\tBeanstalk" }
 }
 
--- Harvested Fruit Inventory Data Map (Uses Weight Payload Structs instead of Seed Structures)
 local HarvestedFruits = {
     { Name = "Carrot (kg)", Data = "{\000\006Carrot" },
     { Name = "Strawberry (kg)", Data = "{\000\nStrawberry" },
@@ -135,6 +134,7 @@ Main.BackgroundColor3 = Colors.Background
 Main.BorderSizePixel = 0
 Main.Active = true
 
+-- Strict size bounds so the GUI handles scaling cleanly
 local MainSizeConstraint = Instance.new("UISizeConstraint")
 MainSizeConstraint.MinSize = Vector2.new(600, 440)
 MainSizeConstraint.MaxSize = Vector2.new(900, 700)
@@ -144,7 +144,7 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = Main
 
--- Create a dedicated transparent header area exclusively for dragging actions
+-- Transparent frame mapping out the header bar for dragging
 local HeaderDragArea = Instance.new("Frame")
 HeaderDragArea.Name = "HeaderDragArea"
 HeaderDragArea.Size = UDim2.new(1, 0, 0, 50)
@@ -176,41 +176,48 @@ local function InitializeWindowControls(frame, dragHandle)
 end
 InitializeWindowControls(Main, HeaderDragArea)
 
+-- =============================================================================
+-- DYNAMIC RESIZE HANDLE INTERFACE (BOTTOM RIGHT CORNER)
+-- =============================================================================
 local ResizeHandle = Instance.new("ImageButton")
 ResizeHandle.Name = "ResizeHandle"
 ResizeHandle.Size = UDim2.new(0, 16, 0, 16)
 ResizeHandle.Position = UDim2.new(1, -16, 1, -16)
 ResizeHandle.BackgroundTransparency = 1
-ResizeHandle.Image = "rbxassetid://6031093155" 
+ResizeHandle.Image = "rbxassetid://6031093155" -- Diagonal resize lines icon
 ResizeHandle.ImageColor3 = Colors.TextMuted
-ResizeHandle.ZIndex = 10
+ResizeHandle.ZIndex = 12
 ResizeHandle.Parent = Main
 
-local resizable = false
-local startSize, startMousePos
+local isResizing = false
+local initialSize, initialMousePos
 
 ResizeHandle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        resizable = true
-        startSize = Main.Size
-        startMousePos = UserInputService:GetMouseLocation()
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isResizing = true
+        initialSize = Main.Size
+        initialMousePos = UserInputService:GetMouseLocation()
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then isResizing = false end
+        end)
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if resizable and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local currentMousePos = UserInputService:GetMouseLocation()
-        local delta = currentMousePos - startMousePos
-        local newWidth = math.clamp(startSize.X.Offset + delta.X, MainSizeConstraint.MinSize.X, MainSizeConstraint.MaxSize.X)
-        local newHeight = math.clamp(startSize.Y.Offset + delta.Y, MainSizeConstraint.MinSize.Y, MainSizeConstraint.MaxSize.Y)
-        Main.Size = UDim2.new(0, newWidth, 0, newHeight)
+        local delta = currentMousePos - initialMousePos
+        
+        local targetWidth = math.clamp(initialSize.X.Offset + delta.X, MainSizeConstraint.MinSize.X, MainSizeConstraint.MaxSize.X)
+        local targetHeight = math.clamp(initialSize.Y.Offset + delta.Y, MainSizeConstraint.MinSize.Y, MainSizeConstraint.MaxSize.Y)
+        
+        Main.Size = UDim2.new(0, targetWidth, 0, targetHeight)
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizable = false end
-end)
-
+-- =============================================================================
+-- CONTINUED SYSTEM ARCHITECTURE
+-- =============================================================================
 local LayoutLine = Instance.new("Frame")
 LayoutLine.Name = "LayoutLine"
 LayoutLine.Parent = Main
@@ -309,7 +316,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -20, 0, 24)
 Title.Position = UDim2.new(0, 20, 0, 20)
 Title.BackgroundTransparency = 1
-Title.Text = "Meliodas"
+Title.Text = "NovaHub"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.TextColor3 = Colors.TextWhite
@@ -553,7 +560,7 @@ local function CreateModuleCard(title, defaultDelay, onSliderUpdate)
     track.BackgroundColor3 = Color3.fromRGB(42, 40, 52)
     track.Text = ""
     track.AutoButtonColor = false
-    track.Parent = track.Parent and SliderCard or SliderCard
+    track.Parent = SliderCard
     Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
     local fill = Instance.new("Frame")
@@ -629,7 +636,7 @@ end)
 gearSliderUpdateFunc = gearSliderSetter
 
 -- =============================================================================
--- MAIL VIEW SYSTEM (MODIFIED: SEPARATED SEEDS & GEARS + MULTI-SELECT SUPPORT)
+-- MAIL VIEW SYSTEM
 -- =============================================================================
 local MailLayout = Instance.new("UIListLayout")
 MailLayout.Parent = MailView
@@ -802,7 +809,7 @@ MailToggleBall.Parent = MailToggleFrame
 Instance.new("UICorner", MailToggleBall).CornerRadius = UDim.new(1, 0)
 
 -- =============================================================================
--- FIXED: FRUIT & HARVESTED WEIGHT GIFTING INTERFACE CARD (NO SEEDS)
+-- FRUIT & HARVESTED WEIGHT GIFTING INTERFACE CARD
 -- =============================================================================
 local FruitGiftCard = Instance.new("Frame")
 FruitGiftCard.Name = "FruitGiftCard"
@@ -883,7 +890,6 @@ local function PopulateFruitDropdown()
     for _, child in ipairs(FruitDropdownMenu:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
-    -- Dynamically maps exclusively from Harvested Fruits with Weight Signatures
     for _, item in ipairs(HarvestedFruits) do
         local row = Instance.new("TextButton")
         row.Size = UDim2.new(1, 0, 0, 28)
