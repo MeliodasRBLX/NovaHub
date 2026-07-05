@@ -144,9 +144,20 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = Main
 
-local function InitializeWindowControls(frame)
+-- Create a dedicated transparent header area exclusively for dragging actions
+local HeaderDragArea = Instance.new("Frame")
+HeaderDragArea.Name = "HeaderDragArea"
+HeaderDragArea.Size = UDim2.new(1, 0, 0, 50)
+HeaderDragArea.Position = UDim2.new(0, 0, 0, 0)
+HeaderDragArea.BackgroundTransparency = 1
+HeaderDragArea.ZIndex = 5
+HeaderDragArea.Parent = Main
+
+local function InitializeWindowControls(frame, dragHandle)
     local dragToggle, dragStart, startPos
-    frame.InputBegan:Connect(function(input)
+    local handle = dragHandle or frame
+    
+    handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragToggle = true
             dragStart = input.Position
@@ -163,7 +174,7 @@ local function InitializeWindowControls(frame)
         end
     end)
 end
-InitializeWindowControls(Main)
+InitializeWindowControls(Main, HeaderDragArea)
 
 local ResizeHandle = Instance.new("ImageButton")
 ResizeHandle.Name = "ResizeHandle"
@@ -215,6 +226,7 @@ TopControls.Size = UDim2.new(0.2, 0, 0, 40)
 TopControls.Position = UDim2.new(1, -15, 0, 15)
 TopControls.AnchorPoint = Vector2.new(1, 0)
 TopControls.BackgroundTransparency = 1
+TopControls.ZIndex = 6
 
 local TopLayout = Instance.new("UIListLayout")
 TopLayout.Parent = TopControls
@@ -232,6 +244,7 @@ local function CreateTopButton(text, color, parent)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 11
     btn.TextColor3 = color
+    btn.ZIndex = 7
     btn.Parent = parent
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     return btn
