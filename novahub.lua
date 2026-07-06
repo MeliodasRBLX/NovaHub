@@ -435,7 +435,7 @@ local VerTag = Instance.new("TextLabel")
 VerTag.Size = UDim2.new(1, -16, 0, 26)
 VerTag.Position = UDim2.new(0, 8, 1, -35)
 VerTag.BackgroundColor3 = Colors.CardBg
-VerTag.Text = "Build v1.1.2"
+VerTag.Text = "Build v1.1.0"
 VerTag.Font = Enum.Font.GothamMedium
 VerTag.TextSize = 9
 VerTag.TextColor3 = Colors.TextMuted
@@ -565,50 +565,34 @@ end
 -- =============================================================================
 -- MODULE REGISTRATION
 -- =============================================================================
-Lua
--- Auto Sell Module
-local isAutoSellActive = false
-local autoSellIDs = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
 
-createToggleModule(AutoView, "Auto Sell All", function(isActive)
-    isAutoSellActive = isActive -- Update the state
-    
-    if isAutoSellActive then
+-- Auto Sell Module
+local autoSellID = 28 -- Modify this variable to change the dynamic byte
+createToggleModule(AutoView, "Auto Sell", function(isActive)
+    if isActive then
         task.spawn(function()
-            while isAutoSellActive do -- The loop now checks the persistent variable
-                for _, id in ipairs(autoSellIDs) do
-                    if not isAutoSellActive then break end
-                    local packet = buffer.fromstring(string.char(179, 0, id))
-                    firePacket(packet)
-                    task.wait(0.1)
-                end
-                task.wait(5)
+            while true do -- Loop check handled by your trigger logic
+                -- Uses string.char to make the last byte dynamic
+                firePacket(buffer.fromstring(string.char(179) .. string.char(0) .. string.char(autoSellID)))
+                task.wait(1)
             end
         end)
     end
 end)
 
 -- Auto Daily Deal Module
-local isAutoDailyActive = false
-local autoDailyIDs = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
-
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
-    isAutoDailyActive = isActive -- Update the state
-    
-    if isAutoDailyActive then
+    if isActive then
         task.spawn(function()
-            while isAutoDailyActive do -- The loop now checks the persistent variable
-                for _, id in ipairs(autoDailyIDs) do
-                    if not isAutoDailyActive then break end
-                    local packet = buffer.fromstring(string.char(183, 0, id))
-                    firePacket(packet)
-                    task.wait(0.1)
-                end
+            while true do
+                firePacket(buffer.fromstring("\183\000\020"))
                 task.wait(5)
             end
         end)
     end
 end)
+
+-- Finalize Canvas
 AutoView.CanvasSize = UDim2.new(0, 0, 0, AutoLayout.AbsoluteContentSize.Y + 20)
 
 -- =============================================================================
