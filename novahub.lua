@@ -582,23 +582,23 @@ end)
 
 -- Define the dynamic sequence for the Daily Deal
 -- You can change these numbers to anything you need
-local dailyDealPacketData = {183, 0, 0} 
+local dailyDealPacketData = {183, 0, 24} 
 
 -- Auto Daily Deal Module
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
     if isActive then
         task.spawn(function()
-            while true do
-                -- Construct the packet by iterating through the table
-                local dynamicString = ""
-                for _, byte in ipairs(dailyDealPacketData) do
-                    dynamicString = dynamicString .. string.char(byte)
-                end
+            -- This loop will cycle through 1 to 99
+            for i = 1, 99 do
+                -- Check if the user toggled it off mid-loop
+                if not isActive then break end
                 
-                -- Fire the dynamic packet
+                -- Construct: 183, 0, [i]
+                local dynamicString = string.char(183) .. string.char(0) .. string.char(i)
                 firePacket(buffer.fromstring(dynamicString))
                 
-                task.wait(5)
+                -- Delay between each packet in the sequence
+                task.wait(0.1) 
             end
         end)
     end
