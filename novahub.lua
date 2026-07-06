@@ -580,37 +580,25 @@ createToggleModule(AutoView, "Auto Sell", function(isActive)
     end
 end)
 
--- Auto Daily Deal Module
--- Add this variable at the top of your script so you can change it globally
-local dailyDealID = 20 
+-- Define the dynamic ID variable
+local autoDailyDealID = 20 -- You can change this variable anywhere in your script
 
--- Define the Daily Deal Module
-local function createDailyDealModule(parent)
-    -- ... (Container/UI setup remains the same) ...
-    
-    local isDailyDealActive = false
-    local dailyDealThread = nil
-    
-    DailyDealToggle.MouseButton1Click:Connect(function()
-        isDailyDealActive = not isDailyDealActive
-        
-        -- ... (Tween animations remain the same) ...
-        
-        if isDailyDealActive then
-            dailyDealThread = task.spawn(function()
-                while isDailyDealActive do
-                    -- DYNAMIC BUFFER: 183, 0, [dailyDealID]
-                    local payload = string.char(183) .. string.char(0) .. string.char(dailyDealID)
-                    firePacket(buffer.fromstring(payload))
-                    
-                    task.wait(5)
-                end
-            end)
-        else
-            if dailyDealThread then task.cancel(dailyDealThread) end
-        end
-    end)
-end
+-- Auto Daily Deal Module
+createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
+    if isActive then
+        task.spawn(function()
+            while true do
+                -- Construct the buffer dynamically using the variable
+                -- Packet structure: 183, 0, [autoDailyDealID]
+                local dynamicBuffer = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(autoDailyDealID))
+                
+                firePacket(dynamicBuffer)
+                
+                task.wait(5)
+            end
+        end)
+    end
+end)
 
 -- Finalize Canvas
 AutoView.CanvasSize = UDim2.new(0, 0, 0, AutoLayout.AbsoluteContentSize.Y + 20)
