@@ -584,17 +584,27 @@ end)
 local autoDailyDealID = 20 -- You can change this variable anywhere in your script
 
 -- Auto Daily Deal Module
+-- Define dynamic ID variables
+local dailyDealID_Part1 = 24 -- Value for the first packet
+local dailyDealID_Part2 = 0  -- Value for the second packet (or whatever the trailing byte is)
+
+-- Auto Daily Deal Module
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
     if isActive then
         task.spawn(function()
             while true do
-                -- Construct the buffer dynamically using the variable
-                -- Packet structure: 183, 0, [autoDailyDealID]
-                local dynamicBuffer = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(autoDailyDealID))
+                -- Packet 1: \183\000\024
+                local buffer1 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part1))
+                firePacket(buffer1)
                 
-                firePacket(dynamicBuffer)
+                -- Small delay to ensure the server registers the sequence
+                task.wait(0.1) 
                 
-                task.wait(5)
+                -- Packet 2: \183\000\000
+                local buffer2 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part2))
+                firePacket(buffer2)
+                
+                task.wait(5) -- Wait before next full cycle
             end
         end)
     end
