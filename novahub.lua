@@ -582,7 +582,7 @@ end)
 
 -- Define the dynamic sequence for the Daily Deal
 -- You can change these numbers to anything you need
-local dailyDealPacketData = {183, 0, 24} 
+local dailyDealPacketData = {183, 0, 0} 
 
 -- Auto Daily Deal Module
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
