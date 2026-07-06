@@ -567,40 +567,38 @@ end
 -- =============================================================================
 
 -- Auto Sell Module
-local autoSellID = 28 -- Modify this variable to change the dynamic byte
-createToggleModule(AutoView, "Auto Sell", function(isActive)
+local autoSellIDs = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
+
+createToggleModule(AutoView, "Auto Sell All", function(isActive)
     if isActive then
         task.spawn(function()
-            while true do -- Loop check handled by your trigger logic
-                -- Uses string.char to make the last byte dynamic
-                firePacket(buffer.fromstring(string.char(179) .. string.char(0) .. string.char(autoSellID)))
-                task.wait(1)
+            while isActive do
+                for _, id in ipairs(autoSellIDs) do
+                    local packet = buffer.fromstring(string.char(179, 0, id))
+                    firePacket(packet)
+                    task.wait(0.1) -- Small delay between packets (optional)
+                end
+
+                task.wait(5) -- Wait before repeating
             end
         end)
     end
 end)
 
 -- Auto Daily Deal Module
-local dailyDealID_Part1 = 24 -- Value for the first packet
-local dailyDealID_Part2 = 25  -- Value for the second packet (or whatever the trailing byte is)
-
+local autoDailyIDs = {20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
 
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
     if isActive then
         task.spawn(function()
-            while true do
-                -- Packet 1: \183\000\024
-                local buffer1 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part1))
-                firePacket(buffer1)
-                
-                -- Small delay to ensure the server registers the sequence
-                task.wait(0.1) 
-                
-                -- Packet 2: \183\000\025
-                local buffer2 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part2))
-                firePacket(buffer2)
-                
-                task.wait(5) -- Wait before next full cycle
+            while isActive do
+                for _, id in ipairs(autoDailyIDs) do
+                    local packet = buffer.fromstring(string.char(183, 0, id))
+                    firePacket(packet)
+                    task.wait(0.1) -- Small delay between packets (optional)
+                end
+
+                task.wait(5) -- Wait before repeating
             end
         end)
     end
