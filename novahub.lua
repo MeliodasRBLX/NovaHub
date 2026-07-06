@@ -580,30 +580,31 @@ createToggleModule(AutoView, "Auto Sell", function(isActive)
     end
 end)
 
--- Define the dynamic sequence for the Daily Deal
--- You can change these numbers to anything you need
-local dailyDealPacketData = {183, 0, 24} 
-
 -- Auto Daily Deal Module
+local dailyDealID_Part1 = 24 -- Value for the first packet
+local dailyDealID_Part2 = 25  -- Value for the second packet (or whatever the trailing byte is)
+
+
 createToggleModule(AutoView, "Auto Daily Deal", function(isActive)
     if isActive then
         task.spawn(function()
-            -- This loop will cycle through 1 to 99
-            for i = 1, 99 do
-                -- Check if the user toggled it off mid-loop
-                if not isActive then break end
+            while true do
+                -- Packet 1: \183\000\024
+                local buffer1 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part1))
+                firePacket(buffer1)
                 
-                -- Construct: 183, 0, [i]
-                local dynamicString = string.char(183) .. string.char(0) .. string.char(i)
-                firePacket(buffer.fromstring(dynamicString))
-                
-                -- Delay between each packet in the sequence
+                -- Small delay to ensure the server registers the sequence
                 task.wait(0.1) 
+                
+                -- Packet 2: \183\000\025
+                local buffer2 = buffer.fromstring(string.char(183) .. string.char(0) .. string.char(dailyDealID_Part2))
+                firePacket(buffer2)
+                
+                task.wait(5) -- Wait before next full cycle
             end
         end)
     end
 end)
-
 -- Finalize Canvas
 AutoView.CanvasSize = UDim2.new(0, 0, 0, AutoLayout.AbsoluteContentSize.Y + 20)
 
