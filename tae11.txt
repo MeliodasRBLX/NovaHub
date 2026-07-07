@@ -1,0 +1,877 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+
+-- =============================================================================
+-- CONFIGURATION
+-- =============================================================================
+local Colors = {
+    Background   = Color3.fromRGB(15, 16, 20),
+    SidebarBg    = Color3.fromRGB(20, 21, 26),
+    CardBg       = Color3.fromRGB(27, 29, 35),
+    CardBgHover  = Color3.fromRGB(36, 38, 46),
+    Accent       = Color3.fromRGB(167, 85, 255),
+    AccentDim    = Color3.fromRGB(120, 70, 200),
+    AccentRed    = Color3.fromRGB(255, 85, 90),
+    TextWhite    = Color3.fromRGB(245, 244, 250),
+    TextMuted    = Color3.fromRGB(140, 136, 156),
+    TextDim      = Color3.fromRGB(90, 87, 102),
+    Separator    = Color3.fromRGB(36, 38, 46),
+    TopBarBg     = Color3.fromRGB(18, 19, 24),
+}
+
+local TWEEN_FAST = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local TWEEN_MED  = TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local TWEEN_SLOW = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+local SPLASH_DURATION = 5 -- seconds, as requested
+
+-- Smaller default size so it fits comfortably centered on ~360dpi mobile screens too
+local DEFAULT_WIDTH = 340
+local DEFAULT_HEIGHT = 240
+
+-- =============================================================================
+-- ROOT GUI
+-- =============================================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NovaGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+
+-- =============================================================================
+-- SPLASH SCREEN
+-- =============================================================================
+local Splash = Instance.new("Frame")
+Splash.Name = "Splash"
+Splash.AnchorPoint = Vector2.new(0.5, 0.5)
+Splash.Position = UDim2.new(0.5, 0, 0.5, 0)
+Splash.Size = UDim2.new(0, 260, 0, 180)
+Splash.BackgroundColor3 = Colors.Background
+Splash.BorderSizePixel = 0
+Splash.ClipsDescendants = true
+Splash.ZIndex = 1000
+Splash.Parent = ScreenGui
+
+local SplashCorner = Instance.new("UICorner", Splash)
+SplashCorner.CornerRadius = UDim.new(0, 14)
+
+local SplashStroke = Instance.new("UIStroke", Splash)
+SplashStroke.Color = Colors.Accent
+SplashStroke.Transparency = 0.75
+SplashStroke.Thickness = 1
+
+-- faint radial-ish glow behind the logo using a gradient-stroked ring
+local GlowRing = Instance.new("Frame", Splash)
+GlowRing.Name = "GlowRing"
+GlowRing.AnchorPoint = Vector2.new(0.5, 0.5)
+GlowRing.Position = UDim2.new(0.5, 0, 0.5, -44)
+GlowRing.Size = UDim2.new(0, 56, 0, 56)
+GlowRing.BackgroundTransparency = 1
+GlowRing.ZIndex = 1001
+
+local GlowRingCorner = Instance.new("UICorner", GlowRing)
+GlowRingCorner.CornerRadius = UDim.new(1, 0)
+
+local GlowStroke = Instance.new("UIStroke", GlowRing)
+GlowStroke.Color = Colors.Accent
+GlowStroke.Thickness = 2
+GlowStroke.Transparency = 0.35
+
+-- inner core dot
+local CoreDot = Instance.new("Frame", GlowRing)
+CoreDot.AnchorPoint = Vector2.new(0.5, 0.5)
+CoreDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+CoreDot.Size = UDim2.new(0, 18, 0, 18)
+CoreDot.BackgroundColor3 = Colors.Accent
+CoreDot.ZIndex = 1002
+Instance.new("UICorner", CoreDot).CornerRadius = UDim.new(1, 0)
+
+-- orbiting particle that spins around the ring continuously
+local Orbiter = Instance.new("Frame", GlowRing)
+Orbiter.AnchorPoint = Vector2.new(0.5, 0.5)
+Orbiter.Size = UDim2.new(0, 6, 0, 6)
+Orbiter.Position = UDim2.new(0.5, 28, 0.5, 0)
+Orbiter.BackgroundColor3 = Colors.TextWhite
+Orbiter.ZIndex = 1003
+Instance.new("UICorner", Orbiter).CornerRadius = UDim.new(1, 0)
+
+-- Title text
+local SplashTitle = Instance.new("TextLabel", Splash)
+SplashTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+SplashTitle.Position = UDim2.new(0.5, 0, 0.5, -2)
+SplashTitle.Size = UDim2.new(0, 220, 0, 26)
+SplashTitle.BackgroundTransparency = 1
+SplashTitle.Text = "NOVA HUB"
+SplashTitle.Font = Enum.Font.GothamBold
+SplashTitle.TextSize = 20
+SplashTitle.TextColor3 = Colors.TextWhite
+SplashTitle.TextTransparency = 1
+SplashTitle.ZIndex = 1001
+
+local SplashSubtitle = Instance.new("TextLabel", Splash)
+SplashSubtitle.AnchorPoint = Vector2.new(0.5, 0.5)
+SplashSubtitle.Position = UDim2.new(0.5, 0, 0.5, 20)
+SplashSubtitle.Size = UDim2.new(0, 220, 0, 16)
+SplashSubtitle.BackgroundTransparency = 1
+SplashSubtitle.Text = "Initializing interface..."
+SplashSubtitle.Font = Enum.Font.Gotham
+SplashSubtitle.TextSize = 11
+SplashSubtitle.TextColor3 = Colors.TextMuted
+SplashSubtitle.TextTransparency = 1
+SplashSubtitle.ZIndex = 1001
+
+-- Progress bar track + fill
+local BarTrack = Instance.new("Frame", Splash)
+BarTrack.AnchorPoint = Vector2.new(0.5, 0.5)
+BarTrack.Position = UDim2.new(0.5, 0, 0.5, 48)
+BarTrack.Size = UDim2.new(0, 200, 0, 4)
+BarTrack.BackgroundColor3 = Colors.Separator
+BarTrack.BackgroundTransparency = 1
+BarTrack.ZIndex = 1001
+Instance.new("UICorner", BarTrack).CornerRadius = UDim.new(1, 0)
+
+local BarFill = Instance.new("Frame", BarTrack)
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+BarFill.BackgroundColor3 = Colors.Accent
+BarFill.BackgroundTransparency = 1
+BarFill.BorderSizePixel = 0
+BarFill.ZIndex = 1002
+Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
+local BarGradient = Instance.new("UIGradient", BarFill)
+BarGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Colors.AccentDim),
+    ColorSequenceKeypoint.new(1, Colors.Accent),
+})
+
+-- Percentage counter
+local PercentLabel = Instance.new("TextLabel", Splash)
+PercentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+PercentLabel.Position = UDim2.new(0.5, 0, 0.5, 66)
+PercentLabel.Size = UDim2.new(0, 200, 0, 16)
+PercentLabel.BackgroundTransparency = 1
+PercentLabel.Text = "0%"
+PercentLabel.Font = Enum.Font.GothamMedium
+PercentLabel.TextSize = 11
+PercentLabel.TextColor3 = Colors.TextDim
+PercentLabel.TextTransparency = 1
+PercentLabel.ZIndex = 1001
+
+-- Fade the splash elements in
+TweenService:Create(GlowStroke, TWEEN_SLOW, {Transparency = 0.35}):Play()
+TweenService:Create(CoreDot, TWEEN_SLOW, {BackgroundTransparency = 0}):Play()
+CoreDot.BackgroundTransparency = 1
+TweenService:Create(CoreDot, TWEEN_SLOW, {BackgroundTransparency = 0}):Play()
+TweenService:Create(SplashTitle, TWEEN_SLOW, {TextTransparency = 0}):Play()
+TweenService:Create(SplashSubtitle, TWEEN_SLOW, {TextTransparency = 0.2}):Play()
+TweenService:Create(BarTrack, TWEEN_SLOW, {BackgroundTransparency = 0}):Play()
+TweenService:Create(BarFill, TWEEN_SLOW, {BackgroundTransparency = 0}):Play()
+TweenService:Create(PercentLabel, TWEEN_SLOW, {TextTransparency = 0.2}):Play()
+
+-- Pulsing glow ring (loops for the whole splash duration)
+local pulseTween = TweenService:Create(
+    GlowRing,
+    TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+    {Size = UDim2.new(0, 66, 0, 66)}
+)
+pulseTween:Play()
+
+local corePulse = TweenService:Create(
+    CoreDot,
+    TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+    {Size = UDim2.new(0, 14, 0, 14)}
+)
+corePulse:Play()
+
+-- Continuous orbit rotation around the ring's center for the whole splash duration
+local orbitAngle = 0
+local orbitRadius = 28
+local orbitConn
+orbitConn = RunService.RenderStepped:Connect(function(dt)
+    orbitAngle = orbitAngle + dt * 260 -- degrees per second
+    local rad = math.rad(orbitAngle)
+    Orbiter.Position = UDim2.new(0.5, math.cos(rad) * orbitRadius, 0.5, math.sin(rad) * orbitRadius)
+end)
+
+-- Animate the progress bar filling over the full splash duration, with a live ticking percentage
+local barFillTween = TweenService:Create(
+    BarFill,
+    TweenInfo.new(SPLASH_DURATION, Enum.EasingStyle.Linear),
+    {Size = UDim2.new(1, 0, 1, 0)}
+)
+barFillTween:Play()
+
+local startTime = tick()
+local percentConn
+percentConn = RunService.RenderStepped:Connect(function()
+    local elapsed = tick() - startTime
+    local pct = math.clamp(math.floor((elapsed / SPLASH_DURATION) * 100), 0, 100)
+    PercentLabel.Text = pct .. "%"
+end)
+
+-- =============================================================================
+-- MAIN WINDOW (built underneath the splash, revealed once splash finishes)
+-- =============================================================================
+local Shadow = Instance.new("ImageLabel")
+Shadow.Name = "Shadow"
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://1316045217"
+Shadow.ImageColor3 = Color3.new(0, 0, 0)
+Shadow.ImageTransparency = 0.45
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.Size = UDim2.new(1, 60, 1, 60)
+Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+Shadow.ZIndex = 0
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, DEFAULT_WIDTH, 0, DEFAULT_HEIGHT)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Colors.Background
+Main.BackgroundTransparency = 1 -- starts invisible; fades in after splash (never resized, so nothing can get stuck clipped/hidden)
+Main.BorderSizePixel = 0
+Main.ClipsDescendants = true
+Main.Visible = false
+Main.Parent = ScreenGui
+Shadow.Parent = Main
+
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 14)
+
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = Colors.Accent
+MainStroke.Transparency = 1
+MainStroke.Thickness = 1
+
+local EdgeGlow = Instance.new("Frame", Main)
+EdgeGlow.Size = UDim2.new(1, 0, 0, 2)
+EdgeGlow.BackgroundColor3 = Colors.Accent
+EdgeGlow.BorderSizePixel = 0
+EdgeGlow.ZIndex = 10
+local EdgeGradient = Instance.new("UIGradient", EdgeGlow)
+EdgeGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Colors.Background),
+    ColorSequenceKeypoint.new(0.5, Colors.Accent),
+    ColorSequenceKeypoint.new(1, Colors.Background),
+})
+
+-- =============================================================================
+-- TOP BAR
+-- =============================================================================
+local TopBar = Instance.new("Frame", Main)
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 38)
+TopBar.Position = UDim2.new(0, 0, 0, 2)
+TopBar.BackgroundColor3 = Colors.TopBarBg
+TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 5
+
+local TopBarCorner = Instance.new("UICorner", TopBar)
+TopBarCorner.CornerRadius = UDim.new(0, 14)
+local TopBarMask = Instance.new("Frame", TopBar)
+TopBarMask.Size = UDim2.new(1, 0, 0, 14)
+TopBarMask.Position = UDim2.new(0, 0, 1, -14)
+TopBarMask.BackgroundColor3 = Colors.TopBarBg
+TopBarMask.BorderSizePixel = 0
+TopBarMask.ZIndex = 5
+
+local LogoDot = Instance.new("Frame", TopBar)
+LogoDot.Size = UDim2.new(0, 8, 0, 8)
+LogoDot.Position = UDim2.new(0, 14, 0.5, -4)
+LogoDot.BackgroundColor3 = Colors.Accent
+LogoDot.ZIndex = 6
+Instance.new("UICorner", LogoDot).CornerRadius = UDim.new(1, 0)
+local LogoGlow = Instance.new("UIStroke", LogoDot)
+LogoGlow.Color = Colors.Accent
+LogoGlow.Thickness = 3
+LogoGlow.Transparency = 0.7
+
+local TopBarLabel = Instance.new("TextLabel", TopBar)
+TopBarLabel.Size = UDim2.new(1, -110, 1, 0)
+TopBarLabel.Position = UDim2.new(0, 30, 0, 0)
+TopBarLabel.BackgroundTransparency = 1
+TopBarLabel.Text = "NOVA HUB"
+TopBarLabel.Font = Enum.Font.GothamBold
+TopBarLabel.TextSize = 13
+TopBarLabel.TextColor3 = Colors.TextMuted
+TopBarLabel.TextXAlignment = Enum.TextXAlignment.Left
+TopBarLabel.ZIndex = 6
+
+local function makeTopBarButton(name, xOffset, glyph, glyphSize)
+    local btn = Instance.new("TextButton", TopBar)
+    btn.Name = name
+    btn.Size = UDim2.new(0, 26, 0, 22)
+    btn.Position = UDim2.new(1, xOffset, 0.5, -11)
+    btn.BackgroundColor3 = Colors.CardBg
+    btn.Text = glyph
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = glyphSize
+    btn.TextColor3 = Colors.TextMuted
+    btn.AutoButtonColor = false
+    btn.ZIndex = 6
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+    return btn
+end
+
+local MinimizeBtn = makeTopBarButton("MinimizeBtn", -62, "—", 14)
+local CloseBtn = makeTopBarButton("CloseBtn", -32, "✕", 12)
+
+local function applyHover(button, hoverColor, baseColor, hoverText, baseText)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TWEEN_FAST, {BackgroundColor3 = hoverColor, TextColor3 = hoverText or Colors.TextWhite}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TWEEN_FAST, {BackgroundColor3 = baseColor, TextColor3 = baseText or Colors.TextMuted}):Play()
+    end)
+end
+
+applyHover(MinimizeBtn, Colors.CardBgHover, Colors.CardBg)
+applyHover(CloseBtn, Colors.AccentRed, Colors.CardBg, Colors.TextWhite)
+
+-- =============================================================================
+-- TAB BAR (horizontal, full width — sidebar removed)
+-- =============================================================================
+local TabBar = Instance.new("Frame", Main)
+TabBar.Name = "TabBar"
+TabBar.Size = UDim2.new(1, 0, 0, 36)
+TabBar.Position = UDim2.new(0, 0, 0, 40)
+TabBar.BackgroundColor3 = Colors.SidebarBg
+TabBar.BorderSizePixel = 0
+
+local TabBarDivider = Instance.new("Frame", TabBar)
+TabBarDivider.Size = UDim2.new(1, 0, 0, 1)
+TabBarDivider.Position = UDim2.new(0, 0, 1, 0)
+TabBarDivider.BackgroundColor3 = Colors.Separator
+TabBarDivider.BorderSizePixel = 0
+
+local TabBarList = Instance.new("UIListLayout", TabBar)
+TabBarList.FillDirection = Enum.FillDirection.Horizontal
+TabBarList.SortOrder = Enum.SortOrder.LayoutOrder
+TabBarList.Padding = UDim.new(0, 4)
+
+local TabBarPad = Instance.new("UIPadding", TabBar)
+TabBarPad.PaddingLeft = UDim.new(0, 12)
+TabBarPad.PaddingTop = UDim.new(0, 6)
+
+local tabButtons = {}
+local tabIndicators = {}
+local pages = {}
+
+local function createTabButton(name, order)
+    local btn = Instance.new("TextButton")
+    btn.Name = name .. "Tab"
+    btn.LayoutOrder = order
+    btn.Size = UDim2.new(0, 100, 1, -6)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = TabBar
+
+    local label = Instance.new("TextLabel", btn)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 14
+    label.TextColor3 = Colors.TextMuted
+
+    -- colored highlight line under the label, same accent color as everything else
+    local indicator = Instance.new("Frame", btn)
+    indicator.Size = UDim2.new(0, 0, 0, 2)
+    indicator.Position = UDim2.new(0.5, 0, 1, -2)
+    indicator.AnchorPoint = Vector2.new(0.5, 0)
+    indicator.BackgroundColor3 = Colors.Accent
+    indicator.BorderSizePixel = 0
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+
+    tabButtons[name] = {button = btn, label = label}
+    tabIndicators[name] = indicator
+    return btn
+end
+
+-- =============================================================================
+-- CONTENT AREA (full width now that the sidebar is gone)
+-- =============================================================================
+local Content = Instance.new("Frame", Main)
+Content.Name = "Content"
+Content.Size = UDim2.new(1, 0, 1, -76)
+Content.Position = UDim2.new(0, 0, 0, 76)
+Content.BackgroundTransparency = 1
+Content.ClipsDescendants = true
+
+local function createPage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Name = name .. "Page"
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 4
+    page.ScrollBarImageColor3 = Colors.Accent
+    page.ScrollBarImageTransparency = 0.3
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    page.Parent = Content
+
+    local pad = Instance.new("UIPadding", page)
+    pad.PaddingTop = UDim.new(0, 18)
+    pad.PaddingLeft = UDim.new(0, 18)
+    pad.PaddingRight = UDim.new(0, 18)
+    pad.PaddingBottom = UDim.new(0, 18)
+
+    local list = Instance.new("UIListLayout", page)
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Padding = UDim.new(0, 10)
+
+    pages[name] = page
+    return page
+end
+
+local currentTab = nil
+local function switchTab(name)
+    if currentTab == name then return end
+    for tabName, page in pairs(pages) do
+        page.Visible = (tabName == name)
+    end
+    for tabName, parts in pairs(tabButtons) do
+        local active = tabName == name
+        TweenService:Create(parts.label, TWEEN_FAST, {
+            TextColor3 = active and Colors.TextWhite or Colors.TextMuted
+        }):Play()
+        TweenService:Create(tabIndicators[tabName], TWEEN_MED, {
+            Size = active and UDim2.new(0, 100, 0, 2) or UDim2.new(0, 0, 0, 2)
+        }):Play()
+    end
+    currentTab = name
+end
+
+-- =============================================================================
+-- REUSABLE UI ELEMENTS
+-- =============================================================================
+local function addButton(page, text, order, callback)
+    local btn = Instance.new("TextButton", page)
+    btn.LayoutOrder = order
+    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.BackgroundColor3 = Colors.CardBg
+    btn.Text = text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    btn.TextColor3 = Colors.TextMuted
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+
+    local hoverLine = Instance.new("Frame", btn)
+    hoverLine.Size = UDim2.new(0, 3, 0, 0)
+    hoverLine.Position = UDim2.new(0, 0, 0.5, 0)
+    hoverLine.AnchorPoint = Vector2.new(0, 0.5)
+    hoverLine.BackgroundColor3 = Colors.Accent
+    hoverLine.BorderSizePixel = 0
+    Instance.new("UICorner", hoverLine).CornerRadius = UDim.new(1, 0)
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TWEEN_FAST, {BackgroundColor3 = Colors.CardBgHover, TextColor3 = Colors.TextWhite}):Play()
+        TweenService:Create(hoverLine, TWEEN_FAST, {Size = UDim2.new(0, 3, 0, 24)}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TWEEN_FAST, {BackgroundColor3 = Colors.CardBg, TextColor3 = Colors.TextMuted}):Play()
+        TweenService:Create(hoverLine, TWEEN_FAST, {Size = UDim2.new(0, 3, 0, 0)}):Play()
+    end)
+    if callback then
+        btn.MouseButton1Click:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.08), {BackgroundColor3 = Colors.AccentDim}):Play()
+            task.delay(0.08, function()
+                TweenService:Create(btn, TWEEN_FAST, {BackgroundColor3 = Colors.CardBgHover}):Play()
+            end)
+            callback()
+        end)
+    end
+    return btn
+end
+
+local function addToggle(page, text, order, default, callback)
+    local holder = Instance.new("Frame", page)
+    holder.LayoutOrder = order
+    holder.Size = UDim2.new(1, 0, 0, 42)
+    holder.BackgroundColor3 = Colors.CardBg
+    Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
+
+    local hoverLine = Instance.new("Frame", holder)
+    hoverLine.Size = UDim2.new(0, 3, 0, 0)
+    hoverLine.Position = UDim2.new(0, 0, 0.5, 0)
+    hoverLine.AnchorPoint = Vector2.new(0, 0.5)
+    hoverLine.BackgroundColor3 = Colors.Accent
+    hoverLine.BorderSizePixel = 0
+    Instance.new("UICorner", hoverLine).CornerRadius = UDim.new(1, 0)
+
+    local label = Instance.new("TextLabel", holder)
+    label.Size = UDim2.new(1, -70, 1, 0)
+    label.Position = UDim2.new(0, 14, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 14
+    label.TextColor3 = Colors.TextMuted
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local switchBg = Instance.new("Frame", holder)
+    switchBg.Size = UDim2.new(0, 42, 0, 22)
+    switchBg.Position = UDim2.new(1, -56, 0.5, -11)
+    switchBg.BackgroundColor3 = Colors.Separator
+    Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame", switchBg)
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = UDim2.new(0, 2, 0.5, -9)
+    knob.BackgroundColor3 = Colors.TextWhite
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local state = default or false
+    local clickArea = Instance.new("TextButton", holder)
+    clickArea.Size = UDim2.new(1, 0, 1, 0)
+    clickArea.BackgroundTransparency = 1
+    clickArea.Text = ""
+
+    local function render()
+        TweenService:Create(switchBg, TWEEN_FAST, {
+            BackgroundColor3 = state and Colors.Accent or Colors.Separator
+        }):Play()
+        TweenService:Create(knob, TWEEN_FAST, {
+            Position = state and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+        }):Play()
+    end
+    render()
+
+    holder.MouseEnter:Connect(function()
+        TweenService:Create(holder, TWEEN_FAST, {BackgroundColor3 = Colors.CardBgHover}):Play()
+        TweenService:Create(hoverLine, TWEEN_FAST, {Size = UDim2.new(0, 3, 0, 24)}):Play()
+        TweenService:Create(label, TWEEN_FAST, {TextColor3 = Colors.TextWhite}):Play()
+    end)
+    holder.MouseLeave:Connect(function()
+        TweenService:Create(holder, TWEEN_FAST, {BackgroundColor3 = Colors.CardBg}):Play()
+        TweenService:Create(hoverLine, TWEEN_FAST, {Size = UDim2.new(0, 3, 0, 0)}):Play()
+        TweenService:Create(label, TWEEN_FAST, {TextColor3 = Colors.TextMuted}):Play()
+    end)
+
+    clickArea.MouseButton1Click:Connect(function()
+        state = not state
+        render()
+        if callback then callback(state) end
+    end)
+
+    return holder
+end
+
+local function addSectionLabel(page, text, order)
+    local lbl = Instance.new("TextLabel", page)
+    lbl.LayoutOrder = order
+    lbl.Size = UDim2.new(1, 0, 0, 22)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 12
+    lbl.TextColor3 = Colors.TextDim
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    return lbl
+end
+
+local function addStatCard(page, title, value, order)
+    local card = Instance.new("Frame", page)
+    card.LayoutOrder = order
+    card.Size = UDim2.new(1, 0, 0, 58)
+    card.BackgroundColor3 = Colors.CardBg
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+
+    local topLine = Instance.new("Frame", card)
+    topLine.Size = UDim2.new(0, 0, 0, 2)
+    topLine.Position = UDim2.new(0, 0, 0, 0)
+    topLine.BackgroundColor3 = Colors.Accent
+    topLine.BorderSizePixel = 0
+    Instance.new("UICorner", topLine).CornerRadius = UDim.new(1, 0)
+    TweenService:Create(topLine, TWEEN_SLOW, {Size = UDim2.new(1, 0, 0, 2)}):Play()
+
+    local titleLbl = Instance.new("TextLabel", card)
+    titleLbl.Size = UDim2.new(1, -20, 0, 18)
+    titleLbl.Position = UDim2.new(0, 14, 0, 12)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = title
+    titleLbl.Font = Enum.Font.Gotham
+    titleLbl.TextSize = 11
+    titleLbl.TextColor3 = Colors.TextDim
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local valueLbl = Instance.new("TextLabel", card)
+    valueLbl.Size = UDim2.new(1, -20, 0, 22)
+    valueLbl.Position = UDim2.new(0, 14, 0, 30)
+    valueLbl.BackgroundTransparency = 1
+    valueLbl.Text = value
+    valueLbl.Font = Enum.Font.GothamBold
+    valueLbl.TextSize = 16
+    valueLbl.TextColor3 = Colors.TextWhite
+    valueLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    return card
+end
+
+-- =============================================================================
+-- ESP & INVISIBLE LOGIC
+-- =============================================================================
+local espActive = false
+local espHighlights = {}
+
+local function updateESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Player and player.Character then
+            local highlight = player.Character:FindFirstChild("NovaESP")
+            if espActive then
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "NovaESP"
+                    highlight.FillColor = Colors.AccentRed -- Set to Red
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 1 -- No border line
+                    highlight.Parent = player.Character
+                end
+            else
+                if highlight then highlight:Destroy() end
+            end
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if espActive then updateESP() end
+end)
+
+-- =============================================================================
+-- BUILD PAGES / TABS
+-- =============================================================================
+createTabButton("Dashboard", 1)
+createTabButton("Settings", 2)
+
+local dashboardPage = createPage("Dashboard")
+local settingsPage = createPage("Settings")
+
+addSectionLabel(dashboardPage, "OVERVIEW", 1)
+addStatCard(dashboardPage, "STATUS", "Online", 2)
+addSectionLabel(dashboardPage, "ACTIONS", 3)
+addButton(dashboardPage, "Main", 4, function()
+    print("Example action clicked")
+end)
+addToggle(dashboardPage, "ESP", 5, false, function(state)
+    espActive = state
+    if not state then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("NovaESP") then
+                player.Character.NovaESP:Destroy()
+            end
+        end
+    end
+end)
+
+addToggle(dashboardPage, "Invisible", 6, false, function(state)
+    local character = Player.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = state and 1 or 0
+            end
+        end
+    end
+end)
+
+addSectionLabel(settingsPage, "PREFERENCES", 1)
+addToggle(settingsPage, "Notifications", 2, true, function(state)
+    print("Notifications:", state)
+end)
+addToggle(settingsPage, "Sound Effects", 3, true, function(state)
+    print("Sound Effects:", state)
+end)
+
+tabButtons["Dashboard"].button.MouseButton1Click:Connect(function() switchTab("Dashboard") end)
+tabButtons["Settings"].button.MouseButton1Click:Connect(function() switchTab("Settings") end)
+
+switchTab("Dashboard")
+
+-- =============================================================================
+-- DRAGGING (from top bar)
+-- =============================================================================
+local dragging = false
+local dragStart, startPos
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- =============================================================================
+-- RESIZE HANDLE (bottom-right corner, no minimum size)
+-- =============================================================================
+local ResizeGrip = Instance.new("Frame", Main)
+ResizeGrip.Name = "ResizeGrip"
+ResizeGrip.Size = UDim2.new(0, 18, 0, 18)
+ResizeGrip.Position = UDim2.new(1, -18, 1, -18)
+ResizeGrip.BackgroundTransparency = 1
+ResizeGrip.ZIndex = 20
+
+for i = 1, 3 do
+    local line = Instance.new("Frame", ResizeGrip)
+    line.Size = UDim2.new(0, 10 - (i * 2), 0, 2)
+    line.Position = UDim2.new(1, -(10 - (i * 2)) - 2, 1, -(i * 5))
+    line.Rotation = -45
+    line.BackgroundColor3 = Colors.Accent
+    line.BackgroundTransparency = 0.35
+    line.BorderSizePixel = 0
+    line.ZIndex = 21
+    Instance.new("UICorner", line).CornerRadius = UDim.new(1, 0)
+end
+
+local ResizeButton = Instance.new("TextButton", ResizeGrip)
+ResizeButton.Size = UDim2.new(1, 0, 1, 0)
+ResizeButton.BackgroundTransparency = 1
+ResizeButton.Text = ""
+ResizeButton.ZIndex = 22
+
+local resizing = false
+local resizeStart, startSize
+
+ResizeButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        resizing = true
+        resizeStart = input.Position
+        startSize = Main.Size
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                resizing = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - resizeStart
+        -- No minimum size enforced: only guard against negative/zero so the frame doesn't invert
+        local newWidth = math.max(startSize.X.Offset + delta.X, 1)
+        local newHeight = math.max(startSize.Y.Offset + delta.Y, 1)
+        Main.Size = UDim2.new(0, newWidth, 0, newHeight)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        resizing = false
+    end
+end)
+
+ResizeButton.MouseEnter:Connect(function()
+    for _, line in ipairs(ResizeGrip:GetChildren()) do
+        if line:IsA("Frame") then
+            TweenService:Create(line, TWEEN_FAST, {BackgroundTransparency = 0}):Play()
+        end
+    end
+end)
+ResizeButton.MouseLeave:Connect(function()
+    for _, line in ipairs(ResizeGrip:GetChildren()) do
+        if line:IsA("Frame") then
+            TweenService:Create(line, TWEEN_FAST, {BackgroundTransparency = 0.35}):Play()
+        end
+    end
+end)
+
+-- =============================================================================
+-- MINIMIZE / CLOSE BEHAVIOR
+-- =============================================================================
+local isMinimized = false
+local expandedSize = Main.Size
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        expandedSize = Main.Size -- remember current (possibly resized) size before collapsing
+        TweenService:Create(Main, TWEEN_MED, {Size = UDim2.new(0, Main.Size.X.Offset, 0, 40)}):Play()
+        MinimizeBtn.Text = "▢"
+        ResizeGrip.Visible = false
+    else
+        TweenService:Create(Main, TWEEN_MED, {Size = expandedSize}):Play()
+        MinimizeBtn.Text = "—"
+        ResizeGrip.Visible = true
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    local tween = TweenService:Create(Main, TWEEN_MED, {
+        Size = UDim2.new(0, Main.Size.X.Offset, 0, 0),
+        Position = Main.Position + UDim2.new(0, 0, 0, Main.Size.Y.Offset / 2)
+    })
+    tween:Play()
+    tween.Completed:Connect(function()
+        ScreenGui:Destroy()
+    end)
+end)
+
+-- Reopen hotkey (remove this block if you don't want it)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Main.Visible = not Main.Visible
+    end
+end)
+
+-- =============================================================================
+-- SPLASH -> MAIN HANDOFF
+-- =============================================================================
+task.delay(SPLASH_DURATION, function()
+    -- stop the looping splash animations cleanly
+    if orbitConn then orbitConn:Disconnect() end
+    if percentConn then percentConn:Disconnect() end
+    pulseTween:Cancel()
+    corePulse:Cancel()
+    PercentLabel.Text = "100%"
+
+    -- brief settle at 100% before transitioning out
+    task.wait(0.35)
+
+    -- fade every splash element out together
+    local fadeOutTime = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    TweenService:Create(Splash, fadeOutTime, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(GlowStroke, fadeOutTime, {Transparency = 1}):Play()
+    TweenService:Create(CoreDot, fadeOutTime, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(Orbiter, fadeOutTime, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(SplashTitle, fadeOutTime, {TextTransparency = 1}):Play()
+    TweenService:Create(SplashSubtitle, fadeOutTime, {TextTransparency = 1}):Play()
+    TweenService:Create(BarTrack, fadeOutTime, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(BarFill, fadeOutTime, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(PercentLabel, fadeOutTime, {TextTransparency = 1}):Play()
+
+    task.wait(0.4)
+    Splash:Destroy()
+
+    -- reveal the main window with a safe fade (never touches Size/ClipsDescendants,
+    -- so it can never get stuck invisible even if interrupted)
+    Main.Visible = true
+    TweenService:Create(Main, TWEEN_SLOW, {BackgroundTransparency = 0}):Play()
+    TweenService:Create(MainStroke, TWEEN_SLOW, {Transparency = 0.75}):Play()
+end)
